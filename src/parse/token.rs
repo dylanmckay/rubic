@@ -15,8 +15,9 @@ pub enum Token
 
 impl Token
 {
-    pub fn dot() -> Token { Token::Symbol(".") }
-    pub fn section() -> Token { Token::Word("SECTION".to_owned()) }
+    /// The `class` keyword.
+    pub fn class() -> Token { Token::Word("class".to_owned()) }
+    pub fn end() -> Token { Token::Word("end".to_owned()) }
 }
 
 impl fmt::Display for Token
