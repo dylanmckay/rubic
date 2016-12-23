@@ -9,6 +9,12 @@ pub struct Parser<I: Iterator<Item=char>>
     tokenizer: Peekable<Tokenizer<I>>,
 }
 
+/// Something kind-of like a class (i.e. a module).
+pub struct ClassLike {
+    name: String,
+    items: Vec<ast::Item>,
+}
+
 impl<I> Parser<I>
     where I: Iterator<Item=char>
 {
@@ -36,6 +42,7 @@ impl<I> Parser<I>
     fn parse_item(&mut self) -> Result<ast::Item, Error> {
         let item = match &expect::word(self.peek())?[..] {
             "class" => self.parse_class().map(ast::Item::Class),
+            "module" => self.parse_module().map(ast::Item::Module),
             word => {
                 return Err(ErrorKind::UnexpectedToken(Token::Word(word.to_owned()),
                            vec![Token::Word("item".to_owned())]).into())
@@ -47,22 +54,36 @@ impl<I> Parser<I>
         Ok(item)
     }
 
+    /// Parses a class definition.
     fn parse_class(&mut self) -> Result<ast::Class, Error> {
         self.eat_assert(&Token::class());
 
+        let class_like = self.parse_class_like_thing()?;
+        Ok(ast::Class { name: class_like.name, items: class_like.items })
+    }
+
+    /// Parses a module definition.
+    fn parse_module(&mut self) -> Result<ast::Module, Error> {
+        self.eat_assert(&Token::module());
+
+        let class_like = self.parse_class_like_thing()?;
+        Ok(ast::Module { name: class_like.name, items: class_like.items })
+    }
+
+    /// Parses something which looks like a class (and ends with an `end`).
+    fn parse_class_like_thing(&mut self) -> Result<ClassLike, Error> {
         let name = expect::word(self.next())?;
         let mut items = Vec::new();
 
         expect::terminator(self.next())?;
 
-        while !self.is_next(&Token::end()) {
-            let item = self.parse_item()?;
+        self.until_end(|parser| {
+            let item = parser.parse_item()?;
             items.push(item);
-        }
+            Ok(())
+        })?;
 
-        self.eat_assert(&Token::end());
-
-        Ok(ast::Class { name: name, items: items })
+        Ok(ClassLike { name: name, items: items })
     }
 
     fn peek(&mut self) -> Option<Token> { self.tokenizer.peek().map(Clone::clone) }
@@ -97,6 +118,19 @@ impl<I> Parser<I>
                 _ => break,
             }
         }
+    }
+
+    fn until_end<F>(&mut self, mut f: F) -> Result<(), Error>
+        where F: FnMut(&mut Self) -> Result<(), Error> {
+        self.eat_whitespace();
+        while !self.is_next(&Token::end()) {
+            f(self)?;
+
+            self.eat_whitespace();
+        }
+
+        self.eat_assert(&Token::end());
+        Ok(())
     }
 }
 
@@ -171,6 +205,23 @@ mod test
             items: vec![ast::Class {
                 name: "Abc".to_owned(),
                 items: vec![ast::Class::new("Def").into()],
+            }.into()]
+        });
+    }
+
+    #[test]
+    fn can_parse_single_empty_module() {
+        assert_eq!(parse("module Abc\nend"), ast::Program {
+            items: vec![ast::Module::new("Abc").into()]
+        });
+    }
+
+    #[test]
+    fn can_parse_nested_modules() {
+        assert_eq!(parse("module Abc; module Def; end; end"), ast::Program {
+            items: vec![ast::Module {
+                name: "Abc".to_owned(),
+                items: vec![ast::Module::new("Def").into()],
             }.into()]
         });
     }

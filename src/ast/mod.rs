@@ -19,6 +19,8 @@ pub struct Module
 {
     /// The name of the module.
     pub name: String,
+    /// The items contained in the module.
+    pub items: Vec<Item>,
 }
 
 /// A class.
@@ -35,6 +37,13 @@ impl Program
 {
     pub fn new() -> Self {
         Program { items: Vec::new() }
+    }
+}
+
+impl Module
+{
+    pub fn new<S>(name: S) -> Self where S: Into<String> {
+        Module { name: name.into(), items: Vec::new() }
     }
 }
 

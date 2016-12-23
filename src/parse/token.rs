@@ -17,6 +17,7 @@ impl Token
 {
     /// The `class` keyword.
     pub fn class() -> Token { Token::Word("class".to_owned()) }
+    pub fn module() -> Token { Token::Word("module".to_owned()) }
     pub fn end() -> Token { Token::Word("end".to_owned()) }
 }
 
