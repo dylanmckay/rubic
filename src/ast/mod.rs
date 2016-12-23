@@ -27,6 +27,8 @@ pub struct Class
 {
     /// The name of the class.
     pub name: String,
+    /// The items contained in the class.
+    pub items: Vec<Item>,
 }
 
 impl Program
@@ -35,3 +37,13 @@ impl Program
         Program { items: Vec::new() }
     }
 }
+
+impl Class
+{
+    pub fn new<S>(name: S) -> Self where S: Into<String> {
+        Class { name: name.into(), items: Vec::new() }
+    }
+}
+
+impl Into<Item> for Class { fn into(self) -> Item { Item::Class(self) } }
+impl Into<Item> for Module { fn into(self) -> Item { Item::Module(self) } }

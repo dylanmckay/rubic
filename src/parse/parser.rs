@@ -42,8 +42,7 @@ impl<I> Parser<I>
             },
         }?;
 
-        println!("peeked: {:?}", self.peek());
-        expect::specific(self.next(), Token::EndOfLine)?;
+        expect::terminator(self.next())?;
 
         Ok(item)
     }
@@ -52,15 +51,18 @@ impl<I> Parser<I>
         self.eat_assert(&Token::class());
 
         let name = expect::word(self.next())?;
+        let mut items = Vec::new();
+
         expect::terminator(self.next())?;
 
         while !self.is_next(&Token::end()) {
-            println!("not next");
+            let item = self.parse_item()?;
+            items.push(item);
         }
 
         self.eat_assert(&Token::end());
 
-        Ok(ast::Class { name: name })
+        Ok(ast::Class { name: name, items: items })
     }
 
     fn peek(&mut self) -> Option<Token> { self.tokenizer.peek().map(Clone::clone) }
@@ -111,16 +113,6 @@ mod expect
         }
     }
 
-    pub fn specific(token: Option<Token>, expect: Token) -> Result<Token, Error> {
-        let token = self::something(token)?;
-
-        if token == expect {
-            Ok(token)
-        } else {
-            Err(ErrorKind::UnexpectedToken(token, vec![expect]).into())
-        }
-    }
-
     pub fn word(token: Option<Token>) -> Result<String, Error> {
         let token = self::something(token)?;
 
@@ -139,5 +131,47 @@ mod expect
         if let Token::Symbol(";") = token { return Ok(()) };
 
         Err(ErrorKind::UnexpectedToken(token, vec![Token::Word("terminator".to_owned())]).into())
+    }
+}
+
+#[cfg(test)]
+mod test
+{
+    use super::*;
+    use ast;
+
+    fn parse(s: &str) -> ast::Program {
+        Parser::new(s.chars()).parse().expect("failed to parse")
+    }
+
+    #[test]
+    fn can_parse_single_empty_class() {
+        assert_eq!(parse("class Abc\nend"), ast::Program {
+            items: vec![ast::Class::new("Abc").into()]
+        });
+    }
+
+    #[test]
+    fn can_parse_multiple_empty_classes() {
+        assert_eq!(parse("class Abc\nend\nclass Def\nend"), ast::Program {
+            items: vec![ast::Class::new("Abc").into(), ast::Class::new("Def").into()],
+        });
+    }
+
+    #[test]
+    fn can_parse_classes_with_semicolons() {
+        assert_eq!(parse("class Abc;end"), ast::Program {
+            items: vec![ast::Class::new("Abc").into()],
+        });
+    }
+
+    #[test]
+    fn can_parse_nested_classes() {
+        assert_eq!(parse("class Abc; class Def; end; end"), ast::Program {
+            items: vec![ast::Class {
+                name: "Abc".to_owned(),
+                items: vec![ast::Class::new("Def").into()],
+            }.into()]
+        });
     }
 }
