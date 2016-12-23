@@ -3,7 +3,7 @@ use std::iter::Peekable;
 
 /// A list of symbols.
 const SYMBOLS: &'static [&'static str] = &[
-    ".", ";"
+    ".", ";", "{", "}"
 ];
 
 /// A tokenizer.

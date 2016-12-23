@@ -11,6 +11,7 @@ pub enum Item
 {
     Module(Module),
     Class(Class),
+    Function(Function),
 }
 
 /// A module.
@@ -32,6 +33,19 @@ pub struct Class
     /// The items contained in the class.
     pub items: Vec<Item>,
 }
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Function
+{
+    /// The name of the function.
+    pub name: String,
+    /// The statements in the function.
+    pub statements: Vec<Statement>,
+}
+
+/// Unimplemented.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Statement;
 
 impl Program
 {
@@ -56,3 +70,4 @@ impl Class
 
 impl Into<Item> for Class { fn into(self) -> Item { Item::Class(self) } }
 impl Into<Item> for Module { fn into(self) -> Item { Item::Module(self) } }
+impl Into<Item> for Function { fn into(self) -> Item { Item::Function(self) } }

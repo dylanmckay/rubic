@@ -18,7 +18,11 @@ impl Token
     /// The `class` keyword.
     pub fn class() -> Token { Token::Word("class".to_owned()) }
     pub fn module() -> Token { Token::Word("module".to_owned()) }
+    pub fn def() -> Token { Token::Word("def".to_owned()) }
     pub fn end() -> Token { Token::Word("end".to_owned()) }
+
+    pub fn left_paren() -> Token { Token::Symbol("(") }
+    pub fn right_paren() -> Token { Token::Symbol(")") }
 }
 
 impl fmt::Display for Token

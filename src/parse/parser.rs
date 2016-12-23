@@ -43,6 +43,7 @@ impl<I> Parser<I>
         let item = match &expect::word(self.peek())?[..] {
             "class" => self.parse_class().map(ast::Item::Class),
             "module" => self.parse_module().map(ast::Item::Module),
+            "def" => self.parse_function().map(ast::Item::Function),
             word => {
                 return Err(ErrorKind::UnexpectedToken(Token::Word(word.to_owned()),
                            vec![Token::Word("item".to_owned())]).into())
@@ -70,6 +71,38 @@ impl<I> Parser<I>
         Ok(ast::Module { name: class_like.name, items: class_like.items })
     }
 
+    /// Parses a function.
+    fn parse_function(&mut self) -> Result<ast::Function, Error> {
+        self.eat_assert(&Token::def());
+
+        let name = expect::word(self.next())?;
+        let _parameters = self.parse_function_parameters()?;
+        let mut statements = Vec::new();
+
+        // Expect new line or semicolon after parameters.
+        expect::terminator(self.next())?;
+
+        self.until_end(|parser| {
+            let statement = parser.parse_statement()?;
+            statements.push(statement);
+            Ok(())
+        })?;
+
+        Ok(ast::Function { name: name, statements: statements })
+    }
+
+    fn parse_function_parameters(&mut self) -> Result<(), Error> {
+        let peeked_token = expect::something(self.peek())?;
+
+        // Check if there is a parameter list.
+        if peeked_token == Token::left_paren() {
+            unimplemented!();
+        } else {
+            // No arguments
+            Ok(())
+        }
+    }
+
     /// Parses something which looks like a class (and ends with an `end`).
     fn parse_class_like_thing(&mut self) -> Result<ClassLike, Error> {
         let name = expect::word(self.next())?;
@@ -84,6 +117,11 @@ impl<I> Parser<I>
         })?;
 
         Ok(ClassLike { name: name, items: items })
+    }
+
+    /// Parses a statement.
+    fn parse_statement(&mut self) -> Result<ast::Statement, Error> {
+        unimplemented!();
     }
 
     fn peek(&mut self) -> Option<Token> { self.tokenizer.peek().map(Clone::clone) }
@@ -222,6 +260,16 @@ mod test
             items: vec![ast::Module {
                 name: "Abc".to_owned(),
                 items: vec![ast::Module::new("Def").into()],
+            }.into()]
+        });
+    }
+
+    #[test]
+    fn can_parse_simple_function() {
+        assert_eq!(parse("def abc; end"), ast::Program {
+            items: vec![ast::Function {
+                name: "abc".to_owned(),
+                statements: vec![],
             }.into()]
         });
     }
