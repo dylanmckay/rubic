@@ -1,3 +1,11 @@
+pub use self::expr::*;
+pub use self::stmt::*;
+
+pub mod expr;
+pub mod stmt;
+
+use std::iter::FromIterator;
+
 /// A Ruby program.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Program
@@ -12,6 +20,7 @@ pub enum Item
     Module(Module),
     Class(Class),
     Function(Function),
+    Stmt(Stmt),
 }
 
 /// A module.
@@ -40,12 +49,39 @@ pub struct Function
     /// The name of the function.
     pub name: String,
     /// The statements in the function.
-    pub statements: Vec<Statement>,
+    pub statements: Vec<Stmt>,
 }
 
-/// Unimplemented.
+/// An identifier.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Statement;
+pub struct Identifier(pub String);
+
+/// A list of identifiers separated by periods.
+///
+/// `my.object.do_thing`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Path
+{
+    /// The parts that make up the path.
+    pub parts: Vec<PathSegment>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PathSegment
+{
+    pub identifier: Identifier,
+    pub kind: PathSegmentKind,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum PathSegmentKind
+{
+    /// The root part of a path.
+    /// Should only be used on the very first segment.
+    Root,
+    Dot,
+    DoubleColon,
+}
 
 impl Program
 {
@@ -71,3 +107,11 @@ impl Class
 impl Into<Item> for Class { fn into(self) -> Item { Item::Class(self) } }
 impl Into<Item> for Module { fn into(self) -> Item { Item::Module(self) } }
 impl Into<Item> for Function { fn into(self) -> Item { Item::Function(self) } }
+impl Into<Item> for Stmt { fn into(self) -> Item { Item::Stmt(self) } }
+
+impl FromIterator<PathSegment> for Path
+{
+    fn from_iter<T>(it: T) -> Self where T: IntoIterator<Item=PathSegment> {
+        Path { parts: it.into_iter().collect() }
+    }
+}

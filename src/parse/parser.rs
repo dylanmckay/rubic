@@ -1,4 +1,4 @@
-use parse::{Tokenizer, Token, Error, ErrorKind};
+use parse::{Tokenizer, Token, Error};
 use ast;
 
 use std::iter::Peekable;
@@ -44,10 +44,7 @@ impl<I> Parser<I>
             "class" => self.parse_class().map(ast::Item::Class),
             "module" => self.parse_module().map(ast::Item::Module),
             "def" => self.parse_function().map(ast::Item::Function),
-            word => {
-                return Err(ErrorKind::UnexpectedToken(Token::Word(word.to_owned()),
-                           vec![Token::Word("item".to_owned())]).into())
-            },
+            _ => self.parse_statement().map(ast::Item::Stmt),
         }?;
 
         expect::terminator(self.next())?;
@@ -120,8 +117,49 @@ impl<I> Parser<I>
     }
 
     /// Parses a statement.
-    fn parse_statement(&mut self) -> Result<ast::Statement, Error> {
-        unimplemented!();
+    fn parse_statement(&mut self) -> Result<ast::Stmt, Error> {
+        let expr = self.parse_expression()?;
+        Ok(ast::Stmt::Expr(expr))
+    }
+
+    fn parse_expression(&mut self) -> Result<ast::Expr, Error> {
+        match expect::something(self.peek())? {
+            Token::Word(..) => {
+                let path = self.parse_path()?;
+                Ok(ast::CallExpr {
+                    callee: path,
+                }.into())
+            },
+            _ => unimplemented!(),
+        }
+    }
+
+    fn parse_path(&mut self) -> Result<ast::Path, Error> {
+        let mut segments = Vec::new();
+        let mut last_segment_kind = ast::PathSegmentKind::Root;
+
+        loop {
+            // Read the next word and push it to the list.
+            let word = expect::word(self.next())?;
+            segments.push(ast::PathSegment {
+                identifier: ast::Identifier(word),
+                kind: last_segment_kind,
+            });
+
+            match self.peek() {
+                Some(Token::Symbol("::")) => {
+                    last_segment_kind = ast::PathSegmentKind::DoubleColon;
+                    self.eat();
+                },
+                Some(Token::Symbol(".")) => {
+                    last_segment_kind = ast::PathSegmentKind::Dot;
+                    self.eat();
+                },
+                _ => break, // We've finished parsing
+            }
+        }
+
+        Ok(segments.into_iter().collect())
     }
 
     fn peek(&mut self) -> Option<Token> { self.tokenizer.peek().map(Clone::clone) }
@@ -271,6 +309,30 @@ mod test
                 name: "abc".to_owned(),
                 statements: vec![],
             }.into()]
+        });
+    }
+
+    #[test]
+    fn can_parse_path() {
+        assert_eq!(parse("abc::def.obt"), ast::Program {
+            items: vec![ast::Stmt::Expr(ast::CallExpr {
+                callee: ast::Path {
+                    parts: vec![
+                        ast::PathSegment {
+                            identifier: ast::Identifier("abc".to_owned()),
+                            kind: ast::PathSegmentKind::Root,
+                        },
+                        ast::PathSegment {
+                            identifier: ast::Identifier("def".to_owned()),
+                            kind: ast::PathSegmentKind::DoubleColon,
+                        },
+                        ast::PathSegment {
+                            identifier: ast::Identifier("obt".to_owned()),
+                            kind: ast::PathSegmentKind::Dot,
+                        },
+                    ],
+                },
+            }.into()).into()]
         });
     }
 }

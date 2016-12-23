@@ -3,6 +3,7 @@ use std::iter::Peekable;
 
 /// A list of symbols.
 const SYMBOLS: &'static [&'static str] = &[
+    "::",
     ".", ";", "{", "}"
 ];
 
@@ -34,15 +35,26 @@ impl<I> Tokenizer<I> where I: Iterator<Item=char>
         } else if peeked_char == '"' || peeked_char == '\'' {
             Some(self.read_string())
         } else if SYMBOLS.iter().any(|sym| sym.starts_with(peeked_char)) {
-            let matches: Vec<_> = SYMBOLS.iter().filter(|sym| sym.starts_with(peeked_char)).collect();
+            let first_char = self.chars.next().unwrap();
+
+            let matches: Vec<_> = SYMBOLS.iter().filter(|sym| sym.starts_with(first_char)).collect();
 
             if matches.iter().any(|sym| sym.len() > 1) {
-                // Multi-char symbols are unimplemented.
-                unimplemented!();
+                if let Some(&peeked_second_char) = self.chars.peek() {
+                    let symbol = format!("{}{}", first_char, peeked_second_char);
+
+                    if let Some(exact_match) = SYMBOLS.iter().find(|&&sym| sym == symbol) {
+                        self.chars.next(); // Eat the second symbol.
+                        Some(Token::Symbol(exact_match))
+                    } else {
+                        Some(Token::Symbol(matches[0]))
+                    }
+                } else {
+                    // We should just use the first char
+                    Some(Token::Symbol(matches[0]))
+                }
             } else { // We matched with a single-char symbol.
                 debug_assert_eq!(matches.len(), 1, "matched with multiple symbols");
-
-                self.chars.next(); // Eat the single-char symbol.
                 Some(Token::Symbol(matches[0]))
             }
         } else {
@@ -169,5 +181,14 @@ mod test
     fn can_read_string() {
         assert_eq!(tokenize("\"hello\""), vec![Token::String("hello".to_owned()),
                                                Token::EndOfLine]);
+    }
+
+    #[test]
+    fn can_read_double_colon() {
+        assert_eq!(tokenize("Abc::Def"), vec![Token::Word("Abc".to_owned()),
+                                              Token::Symbol("::"),
+                                              Token::Word("Def".to_owned()),
+                                              Token::EndOfLine]);
+
     }
 }
