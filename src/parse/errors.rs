@@ -1,4 +1,5 @@
 use parse;
+use ast;
 
 error_chain! {
     foreign_links {
@@ -10,6 +11,10 @@ error_chain! {
             description("unexpected token")
             display("unexpected token: got '{:?}' but expected '{:?}'",
                     got, expected)
+        }
+        UnexpectedExpr(got: ast::Expr, expected: String) {
+            description("unexpected expression")
+            display("unexpected expression: got '{:?}' but expected {}", got, expected)
         }
     }
 }

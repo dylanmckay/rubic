@@ -5,7 +5,7 @@ use std::iter::Peekable;
 const SYMBOLS: &'static [&'static str] = &[
     "::", "&&", "||",
     "{", "}", "(", ")", "[", "]",
-    "-", ".", ";", "&", "|"
+    "-", ".", ";", "&", "|", "@", "=",
 ];
 
 /// A tokenizer.

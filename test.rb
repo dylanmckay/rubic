@@ -1,3 +1,5 @@
-def foo
-  Abc::Def.foo(1)
+class Kernel
+  def foo
+    a = 1
+  end
 end

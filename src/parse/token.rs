@@ -26,6 +26,8 @@ impl Token
     pub fn left_paren() -> Token { Token::Symbol("(") }
     pub fn right_paren() -> Token { Token::Symbol(")") }
 
+    pub fn equals() -> Token { Token::Symbol("=") }
+
     pub fn is_terminator(&self) -> bool {
         match *self {
             Token::EndOfLine |

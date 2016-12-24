@@ -127,12 +127,30 @@ impl<I> Parser<I>
         match expect::something(self.peek())? {
             Token::Word(..) => {
                 let path = self.parse_path()?;
-                let arguments = self.parse_arguments()?;
 
-                Ok(ast::CallExpr {
-                    callee: path,
-                    arguments: arguments,
-                }.into())
+                match self.peek().unwrap() {
+                    // Check for assignment.
+                    Token::Symbol("=") => {
+                        self.eat_assert(&Token::equals());
+
+                        let value = self.parse_expression()?;
+
+                        Ok(ast::Expr::Assignment(ast::AssignmentExpr {
+                            assignee: path,
+                            value: Box::new(value),
+                        }))
+                    },
+                    // Regular method call.
+                    _ => {
+                        let arguments = self.parse_arguments()?;
+
+                        Ok(ast::CallExpr {
+                            callee: path,
+                            arguments: arguments,
+                        }.into())
+                    }
+                }
+
             },
             Token::String(..) => self.parse_string_expression().map(Into::into),
             Token::Integer(..) => self.parse_integer_expression().map(Into::into),
