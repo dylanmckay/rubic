@@ -5,6 +5,7 @@ use ast;
 pub enum Expr
 {
     Assignment(AssignmentExpr),
+    Paren(ParenExpr),
     Call(CallExpr),
     StringLiteral(StringLiteral),
     IntegerLiteral(IntegerLiteral),
@@ -18,6 +19,14 @@ pub struct AssignmentExpr
     pub assignee: ast::Path,
     /// The new value.
     pub value: Box<Expr>,
+}
+
+/// A parenthesized expression.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ParenExpr
+{
+    /// The expression in the parentheses.
+    pub inner: Box<Expr>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -50,6 +59,7 @@ macro_rules! expr_boilerplate {
 }
 
 expr_boilerplate!(AssignmentExpr => Assignment);
+expr_boilerplate!(ParenExpr => Paren);
 expr_boilerplate!(CallExpr => Call);
 expr_boilerplate!(StringLiteral => StringLiteral);
 expr_boilerplate!(IntegerLiteral => IntegerLiteral);

@@ -154,6 +154,7 @@ impl<I> Parser<I>
             },
             Token::String(..) => self.parse_string_expression().map(Into::into),
             Token::Integer(..) => self.parse_integer_expression().map(Into::into),
+            Token::Symbol("(") => self.parse_paren_expression().map(Into::into),
             token => panic!("don't know how to handle: {:?}", token),
         }
     }
@@ -204,6 +205,15 @@ impl<I> Parser<I>
         } else {
             unreachable!();
         }
+    }
+
+    fn parse_paren_expression(&mut self) -> Result<ast::ParenExpr, Error> {
+        self.eat_assert(&Token::left_paren());
+
+        let inner = self.parse_expression()?;
+        expect::specific(self.next(), Token::right_paren())?;
+
+        Ok(ast::ParenExpr { inner: Box::new(inner) })
     }
 
     fn parse_arguments(&mut self) -> Result<Vec<ast::Argument>, Error> {
@@ -323,6 +333,16 @@ mod expect
             Ok(token)
         } else {
             panic!("expected something but got nothing");
+        }
+    }
+
+    pub fn specific(token: Option<Token>, expected: Token) -> Result<Token, Error> {
+        let token = something(token)?;
+
+        if token == expected {
+            Ok(token)
+        } else {
+            Err(ErrorKind::UnexpectedToken(token, vec![expected]).into())
         }
     }
 
