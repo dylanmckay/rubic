@@ -341,12 +341,6 @@ impl<I> Parser<I>
         self.until_token(Token::end(), f)
     }
 
-    fn until_terminator<F>(&mut self, f: F) -> Result<(), Error>
-        where F: FnMut(&mut Self) -> Result<(), Error> {
-        self.until(Token::is_terminator, f, false)?;
-        Ok(())
-    }
-
     fn until<P,F>(&mut self,
                   mut pred: P,
                   mut f: F,
