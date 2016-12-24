@@ -141,23 +141,23 @@ impl<I> Parser<I>
 
     fn parse_path(&mut self) -> Result<ast::Path, Error> {
         let mut segments = Vec::new();
-        let mut last_segment_kind = ast::PathSegmentKind::Root;
+        let mut last_separator = ast::PathSeparator::Root;
 
         loop {
             // Read the next word and push it to the list.
             let word = expect::word(self.next())?;
             segments.push(ast::PathSegment {
-                identifier: ast::Identifier(word),
-                kind: last_segment_kind,
+                separator: last_separator,
+                kind: ast::PathSegmentKind::Identifier(ast::Identifier(word)),
             });
 
             match self.peek() {
                 Some(Token::Symbol("::")) => {
-                    last_segment_kind = ast::PathSegmentKind::DoubleColon;
+                    last_separator = ast::PathSeparator::DoubleColon;
                     self.eat();
                 },
                 Some(Token::Symbol(".")) => {
-                    last_segment_kind = ast::PathSegmentKind::Dot;
+                    last_separator = ast::PathSeparator::Dot;
                     self.eat();
                 },
                 _ => break, // We've finished parsing
@@ -368,16 +368,16 @@ mod test
                 callee: ast::Path {
                     parts: vec![
                         ast::PathSegment {
-                            identifier: ast::Identifier("abc".to_owned()),
-                            kind: ast::PathSegmentKind::Root,
+                            kind: ast::PathSegmentKind::Identifier(ast::Identifier("abc".to_owned())),
+                            separator: ast::PathSeparator::Root,
                         },
                         ast::PathSegment {
-                            identifier: ast::Identifier("def".to_owned()),
-                            kind: ast::PathSegmentKind::DoubleColon,
+                            kind: ast::PathSegmentKind::Identifier(ast::Identifier("def".to_owned())),
+                            separator: ast::PathSeparator::DoubleColon,
                         },
                         ast::PathSegment {
-                            identifier: ast::Identifier("obt".to_owned()),
-                            kind: ast::PathSegmentKind::Dot,
+                            kind: ast::PathSegmentKind::Identifier(ast::Identifier("obt".to_owned())),
+                            separator: ast::PathSeparator::Dot,
                         },
                     ],
                 },

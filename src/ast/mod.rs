@@ -56,6 +56,10 @@ pub struct Function
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Identifier(pub String);
 
+/// A constant.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Constant(pub String);
+
 /// A list of identifiers separated by periods.
 ///
 /// `my.object.do_thing`.
@@ -69,12 +73,19 @@ pub struct Path
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PathSegment
 {
-    pub identifier: Identifier,
     pub kind: PathSegmentKind,
+    pub separator: PathSeparator,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum PathSegmentKind
+{
+    Constant(Constant),
+    Identifier(Identifier),
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum PathSegmentKind
+pub enum PathSeparator
 {
     /// The root part of a path.
     /// Should only be used on the very first segment.
