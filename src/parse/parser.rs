@@ -1,4 +1,4 @@
-use parse::{Tokenizer, Token, Error};
+use parse::{Tokenizer, Token, Error, ErrorKind};
 use ast;
 
 use std::iter::Peekable;
@@ -7,12 +7,6 @@ use std::iter::Peekable;
 pub struct Parser<I: Iterator<Item=char>>
 {
     tokenizer: Peekable<Tokenizer<I>>,
-}
-
-/// Something kind-of like a class (i.e. a module).
-pub struct ClassLike {
-    name: String,
-    items: Vec<ast::Item>,
 }
 
 impl<I> Parser<I>
@@ -57,16 +51,44 @@ impl<I> Parser<I>
     fn parse_class(&mut self) -> Result<ast::Class, Error> {
         self.eat_assert(&Token::class());
 
-        let class_like = self.parse_class_like_thing()?;
-        Ok(ast::Class { name: class_like.name, items: class_like.items })
+        let name = expect::word(self.next())?;
+        let mut items = Vec::new();
+        let mut superclass = None;
+
+        // Check if we have a superclass specified.
+        if self.peek().unwrap() == Token::less_than() {
+            self.eat_assert(&Token::less_than());
+
+            superclass = Some(self.parse_constant()?);
+        }
+
+        expect::terminator(self.next())?;
+
+        self.until_end(|parser| {
+            let item = parser.parse_item()?;
+            items.push(item);
+            Ok(())
+        })?;
+
+        Ok(ast::Class { name: name, items: items, superclass: superclass })
     }
 
     /// Parses a module definition.
     fn parse_module(&mut self) -> Result<ast::Module, Error> {
         self.eat_assert(&Token::module());
 
-        let class_like = self.parse_class_like_thing()?;
-        Ok(ast::Module { name: class_like.name, items: class_like.items })
+        let name = expect::word(self.next())?;
+        let mut items = Vec::new();
+
+        expect::terminator(self.next())?;
+
+        self.until_end(|parser| {
+            let item = parser.parse_item()?;
+            items.push(item);
+            Ok(())
+        })?;
+
+        Ok(ast::Module { name: name, items: items })
     }
 
     /// Parses a function.
@@ -99,22 +121,6 @@ impl<I> Parser<I>
             // No arguments
             Ok(())
         }
-    }
-
-    /// Parses something which looks like a class (and ends with an `end`).
-    fn parse_class_like_thing(&mut self) -> Result<ClassLike, Error> {
-        let name = expect::word(self.next())?;
-        let mut items = Vec::new();
-
-        expect::terminator(self.next())?;
-
-        self.until_end(|parser| {
-            let item = parser.parse_item()?;
-            items.push(item);
-            Ok(())
-        })?;
-
-        Ok(ClassLike { name: name, items: items })
     }
 
     /// Parses a statement.
@@ -214,6 +220,16 @@ impl<I> Parser<I>
         expect::specific(self.next(), Token::right_paren())?;
 
         Ok(ast::ParenExpr { inner: Box::new(inner) })
+    }
+
+    fn parse_constant(&mut self) -> Result<ast::Constant, Error> {
+        let word = expect::word(self.next())?;
+
+        if word.chars().next().unwrap().is_uppercase() {
+            Ok(ast::Constant(word))
+        } else {
+            Err(ErrorKind::UnexpectedToken(Token::Word(word), vec![Token::Word("constant".to_owned())]).into())
+        }
     }
 
     fn parse_arguments(&mut self) -> Result<Vec<ast::Argument>, Error> {
@@ -401,11 +417,23 @@ mod test
     }
 
     #[test]
+    fn can_parse_class_with_superclass() {
+        assert_eq!(parse("class Abc < Parent; end"), ast::Program {
+            items: vec![ast::Class {
+                name: "Abc".to_owned(),
+                items: Vec::new(),
+                superclass: Some(ast::Constant("Parent".to_owned())),
+            }.into()]
+        });
+    }
+
+    #[test]
     fn can_parse_nested_classes() {
         assert_eq!(parse("class Abc; class Def; end; end"), ast::Program {
             items: vec![ast::Class {
                 name: "Abc".to_owned(),
                 items: vec![ast::Class::new("Def").into()],
+                superclass: None,
             }.into()]
         });
     }

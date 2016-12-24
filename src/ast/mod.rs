@@ -41,6 +41,8 @@ pub struct Class
     pub name: String,
     /// The items contained in the class.
     pub items: Vec<Item>,
+    /// The parent class.
+    pub superclass: Option<Constant>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -118,7 +120,7 @@ impl Module
 impl Class
 {
     pub fn new<S>(name: S) -> Self where S: Into<String> {
-        Class { name: name.into(), items: Vec::new() }
+        Class { name: name.into(), items: Vec::new(), superclass: None }
     }
 }
 

@@ -26,6 +26,9 @@ impl Token
     pub fn left_paren() -> Token { Token::Symbol("(") }
     pub fn right_paren() -> Token { Token::Symbol(")") }
 
+    pub fn less_than() -> Token { Token::Symbol("<") }
+    pub fn greater_than() -> Token { Token::Symbol(">") }
+
     pub fn equals() -> Token { Token::Symbol("=") }
 
     pub fn is_terminator(&self) -> bool {

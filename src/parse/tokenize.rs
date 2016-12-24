@@ -4,7 +4,7 @@ use std::iter::Peekable;
 /// A list of symbols.
 const SYMBOLS: &'static [&'static str] = &[
     "::", "&&", "||",
-    "{", "}", "(", ")", "[", "]",
+    "{", "}", "(", ")", "[", "]", "<", ">",
     "-", ".", ";", "&", "|", "@", "=",
 ];
 
@@ -61,7 +61,7 @@ impl<I> Tokenizer<I> where I: Iterator<Item=char>
                 Some(Token::Symbol(matches[0]))
             }
         } else {
-            unimplemented!();
+            panic!("unexpected character: '{}'", peeked_char);
         }
     }
 
