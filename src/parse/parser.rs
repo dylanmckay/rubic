@@ -130,6 +130,8 @@ impl<I> Parser<I>
     }
 
     fn parse_expression(&mut self) -> Result<ast::Expr, Error> {
+        self.eat_whitespace();
+
         match expect::something(self.peek())? {
             Token::Word(..) => {
                 let path = self.parse_path()?;
@@ -274,14 +276,21 @@ impl<I> Parser<I>
     fn parse_arguments_without_parens(&mut self) -> Result<Vec<ast::Argument>, Error> {
         let mut arguments = Vec::new();
 
-        self.until_terminator(|parser| {
-            let argument = parser.parse_argument()?;
+        if self.peek().unwrap().is_terminator() {
+            return Ok(Vec::new());
+        }
+
+        loop {
+            let argument = self.parse_argument()?;
             arguments.push(argument);
 
-            println!("PEEKED: {:?}", parser.peek());
-            parser.eat_if(|token| *token == Token::comma())?;
-            Ok(())
-        })?;
+            if self.peek().unwrap() == Token::comma() {
+                self.eat_assert(&Token::comma());
+                continue;
+            } else {
+                break;
+            }
+        }
 
         Ok(arguments)
     }
