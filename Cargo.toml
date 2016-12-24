@@ -3,6 +3,15 @@ name = "rubic"
 version = "0.1.0"
 authors = ["Dylan McKay <dylanmckay34@gmail.com>"]
 
+description = "Ruby parser and compiler"
+documentation = "https://docs.rs/rubic"
+repository = "https://github.com/dylanmckay/rubic"
+
+readme = "README.md"
+license = "MIT"
+
+keywords = ["ruby", "llvm"]
+
 [lib]
 path = "src/lib.rs"
 
