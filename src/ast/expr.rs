@@ -6,6 +6,7 @@ pub enum Expr
 {
     Assignment(AssignmentExpr),
     Call(CallExpr),
+    StringLiteral(StringLiteral),
 }
 
 /// A `a = b` expression.
@@ -22,7 +23,13 @@ pub struct AssignmentExpr
 pub struct CallExpr
 {
     pub callee: ast::Path,
-    // FIXME: implement arguments.
+    pub arguments: Vec<ast::Argument>
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StringLiteral
+{
+    pub value: String,
 }
 
 macro_rules! expr_boilerplate {
@@ -37,3 +44,4 @@ macro_rules! expr_boilerplate {
 
 expr_boilerplate!(AssignmentExpr => Assignment);
 expr_boilerplate!(CallExpr => Call);
+expr_boilerplate!(StringLiteral => StringLiteral);

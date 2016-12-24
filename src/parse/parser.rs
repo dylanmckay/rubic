@@ -47,6 +47,7 @@ impl<I> Parser<I>
             _ => self.parse_statement().map(ast::Item::Stmt),
         }?;
 
+        println!("got {:?}", item);
         expect::terminator(self.next())?;
 
         Ok(item)
@@ -126,11 +127,15 @@ impl<I> Parser<I>
         match expect::something(self.peek())? {
             Token::Word(..) => {
                 let path = self.parse_path()?;
+                let arguments = self.parse_arguments()?;
+
                 Ok(ast::CallExpr {
                     callee: path,
+                    arguments: arguments,
                 }.into())
             },
-            _ => unimplemented!(),
+            Token::String(..) => self.parse_string_expression().map(Into::into),
+            token => panic!("don't know how to handle: {:?}", token),
         }
     }
 
@@ -162,6 +167,33 @@ impl<I> Parser<I>
         Ok(segments.into_iter().collect())
     }
 
+    fn parse_string_expression(&mut self) -> Result<ast::StringLiteral, Error> {
+        let token = self.next().unwrap();
+
+        if let Token::String(s) = token {
+            Ok(ast::StringLiteral { value: s })
+        } else {
+            unreachable!();
+        }
+    }
+
+    fn parse_arguments(&mut self) -> Result<Vec<ast::Argument>, Error> {
+        let mut arguments = Vec::new();
+
+        self.until_terminator(|parser| {
+            let argument = parser.parse_argument()?;
+            arguments.push(argument);
+            Ok(())
+        })?;
+
+        Ok(arguments)
+    }
+
+    fn parse_argument(&mut self) -> Result<ast::Argument, Error> {
+        let value = self.parse_expression()?;
+        Ok(ast::Argument::Positional(value))
+    }
+
     fn peek(&mut self) -> Option<Token> { self.tokenizer.peek().map(Clone::clone) }
     fn next(&mut self) -> Option<Token> { self.tokenizer.next() }
     fn eat(&mut self) -> Option<Token> { self.next() }
@@ -169,11 +201,6 @@ impl<I> Parser<I>
     fn eat_assert(&mut self, token: &Token) {
         let read_token = self.next().expect("no more tokens");
         assert_eq!(read_token, *token, "tokens do not match");
-    }
-
-    /// Checks if a token is next.
-    fn is_next(&mut self, token: &Token) -> bool {
-        self.peek().map(|t| t == *token).unwrap_or(false)
     }
 
     /// Checks if we've reached the end of file yet.
@@ -196,16 +223,36 @@ impl<I> Parser<I>
         }
     }
 
-    fn until_end<F>(&mut self, mut f: F) -> Result<(), Error>
+    fn until_end<F>(&mut self, f: F) -> Result<(), Error>
         where F: FnMut(&mut Self) -> Result<(), Error> {
+        self.until(|token| *token == Token::end(), f, true)?;
+        self.eat_assert(&Token::end());
+        Ok(())
+    }
+
+    fn until_terminator<F>(&mut self, f: F) -> Result<(), Error>
+        where F: FnMut(&mut Self) -> Result<(), Error> {
+        self.until(Token::is_terminator, f, false)?;
+        self.eat(); // Eat terminator.
+        Ok(())
+    }
+
+    fn until<P,F>(&mut self,
+                  mut pred: P,
+                  mut f: F,
+                  eat_trailing_whitespace: bool) -> Result<(), Error>
+        where P: FnMut(&Token) -> bool, F: FnMut(&mut Self) -> Result<(), Error> {
+        // Stop immediately if the predicate is true.
+        if self.peek().map(|tok| pred(&tok)).unwrap_or(true) { return Ok(()) };
+
         self.eat_whitespace();
-        while !self.is_next(&Token::end()) {
+
+        while self.peek().map(|tok| !pred(&tok)).unwrap_or(false) {
             f(self)?;
 
-            self.eat_whitespace();
+            if eat_trailing_whitespace { self.eat_whitespace(); }
         }
 
-        self.eat_assert(&Token::end());
         Ok(())
     }
 }
@@ -233,14 +280,16 @@ mod expect
         }
     }
 
+
     /// A terminating 'new line' or semicolon.
     pub fn terminator(token: Option<Token>) -> Result<(), Error> {
-        let token = self::something(token)?;
+        match token {
+            None |
+            Some(Token::EndOfLine) |
+                Some(Token::Symbol(";")) => Ok(()),
+            Some(token) => Err(ErrorKind::UnexpectedToken(token, vec![Token::Word("terminator".to_owned())]).into()),
 
-        if let Token::EndOfLine = token { return Ok(()) };
-        if let Token::Symbol(";") = token { return Ok(()) };
-
-        Err(ErrorKind::UnexpectedToken(token, vec![Token::Word("terminator".to_owned())]).into())
+        }
     }
 }
 
@@ -332,6 +381,7 @@ mod test
                         },
                     ],
                 },
+                arguments: Vec::new(),
             }.into()).into()]
         });
     }

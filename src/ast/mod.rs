@@ -83,6 +83,13 @@ pub enum PathSegmentKind
     DoubleColon,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Argument
+{
+    /// A standard positional argument.
+    Positional(Expr),
+}
+
 impl Program
 {
     pub fn new() -> Self {
