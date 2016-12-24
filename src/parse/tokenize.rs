@@ -3,10 +3,13 @@ use std::iter::Peekable;
 
 /// A list of symbols.
 const SYMBOLS: &'static [&'static str] = &[
-    "::", "&&", "||",
+    "::", "&&", "||", "=>",
     "{", "}", "(", ")", "[", "]", "<", ">",
-    "-", ".", ";", "&", "|", "@", "=",
+    ".", ",", ";", "&", "|", "@", "=",
+    ":", "!", "?", "%", "/", "\\", "*", "+", "-",
 ];
+
+const COMMENT_CHAR: char = '#';
 
 /// A tokenizer.
 pub struct Tokenizer<I: Iterator<Item=char>>
@@ -24,6 +27,8 @@ impl<I> Tokenizer<I> where I: Iterator<Item=char>
     }
 
     fn read_token(&mut self) -> Option<Token> {
+        self.eat_whitespace();
+        self.eat_comment();
         self.eat_whitespace();
 
         let peeked_char = if let Some(&c) = self.chars.peek() { c } else { return None };
@@ -50,7 +55,9 @@ impl<I> Tokenizer<I> where I: Iterator<Item=char>
                         self.chars.next(); // Eat the second symbol.
                         Some(Token::Symbol(exact_match))
                     } else {
-                        Some(Token::Symbol(matches[0]))
+                        // Fall back to using only the first char.
+                        let exact_match = SYMBOLS.iter().find(|&&sym| sym == format!("{}", first_char)).unwrap();
+                        Some(Token::Symbol(exact_match))
                     }
                 } else {
                     // We should just use the first char
@@ -61,7 +68,8 @@ impl<I> Tokenizer<I> where I: Iterator<Item=char>
                 Some(Token::Symbol(matches[0]))
             }
         } else {
-            panic!("unexpected character: '{}'", peeked_char);
+            println!("failed: {}", peeked_char);
+            panic!("unexpected character: '{:?}'", peeked_char);
         }
     }
 
@@ -75,11 +83,19 @@ impl<I> Tokenizer<I> where I: Iterator<Item=char>
         }
     }
 
+    fn eat_comment(&mut self) {
+        if self.chars.peek() == Some(&COMMENT_CHAR) {
+            while self.chars.peek() != Some(&'\n') {
+                self.chars.next(); // Eat the character.
+            }
+        }
+    }
+
     fn read_word(&mut self) -> Token {
         let mut chars = Vec::new();
 
         while let Some(&c) = self.chars.peek() {
-            if c.is_alphanumeric() || c == '-' {
+            if c.is_alphanumeric() || c == '_' || c == '!' || c == '?' {
                 self.chars.next(); // Eat the char
                 chars.push(c)
             } else {

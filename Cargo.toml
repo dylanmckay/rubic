@@ -3,5 +3,16 @@ name = "rubic"
 version = "0.1.0"
 authors = ["Dylan McKay <dylanmckay34@gmail.com>"]
 
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "tokenize"
+path = "tools/tokenize.rs"
+
+[[bin]]
+name = "parse"
+path = "tools/parse.rs"
+
 [dependencies]
 error-chain = "0.7"
