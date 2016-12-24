@@ -148,7 +148,7 @@ impl<I> Parser<I>
             let word = expect::word(self.next())?;
             segments.push(ast::PathSegment {
                 separator: last_separator,
-                kind: ast::PathSegmentKind::Identifier(ast::Identifier(word)),
+                kind: ast::PathSegmentKind::new(word),
             });
 
             match self.peek() {
@@ -363,12 +363,12 @@ mod test
 
     #[test]
     fn can_parse_path() {
-        assert_eq!(parse("abc::def.obt"), ast::Program {
+        assert_eq!(parse("Abc::def.obt"), ast::Program {
             items: vec![ast::Stmt::Expr(ast::CallExpr {
                 callee: ast::Path {
                     parts: vec![
                         ast::PathSegment {
-                            kind: ast::PathSegmentKind::Identifier(ast::Identifier("abc".to_owned())),
+                            kind: ast::PathSegmentKind::Constant(ast::Constant("Abc".to_owned())),
                             separator: ast::PathSeparator::Root,
                         },
                         ast::PathSegment {

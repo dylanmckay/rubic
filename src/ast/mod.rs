@@ -122,6 +122,17 @@ impl Class
     }
 }
 
+impl PathSegmentKind
+{
+    pub fn new(text: String) -> Self {
+        if text.chars().next().unwrap().is_uppercase() {
+            PathSegmentKind::Constant(Constant(text))
+        } else {
+            PathSegmentKind::Identifier(Identifier(text))
+        }
+    }
+}
+
 impl Into<Item> for Class { fn into(self) -> Item { Item::Class(self) } }
 impl Into<Item> for Module { fn into(self) -> Item { Item::Module(self) } }
 impl Into<Item> for Function { fn into(self) -> Item { Item::Function(self) } }
