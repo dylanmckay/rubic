@@ -3,8 +3,9 @@ use std::iter::Peekable;
 
 /// A list of symbols.
 const SYMBOLS: &'static [&'static str] = &[
-    "::",
-    ".", ";", "{", "}"
+    "::", "&&", "||",
+    "{", "}", "(", ")", "[", "]",
+    "-", ".", ";", "&", "|"
 ];
 
 /// A tokenizer.
@@ -29,6 +30,8 @@ impl<I> Tokenizer<I> where I: Iterator<Item=char>
 
         if peeked_char.is_alphabetic() {
             Some(self.read_word())
+        } else if peeked_char.is_numeric() {
+            Some(self.read_number())
         } else if peeked_char == '\n' {
             self.chars.next(); // Eat new line
             Some(Token::EndOfLine)
@@ -85,6 +88,24 @@ impl<I> Tokenizer<I> where I: Iterator<Item=char>
         }
 
         Token::Word(chars.into_iter().collect())
+    }
+
+    fn read_number(&mut self) -> Token {
+        let mut chars = Vec::new();
+
+        while let Some(&c) = self.chars.peek() {
+            if c.is_numeric() {
+                self.chars.next(); // Eat the char
+                chars.push(c)
+            } else {
+                break;
+            }
+        }
+
+        let number_text: String = chars.into_iter().collect();
+        let number = number_text.parse().unwrap();
+
+        Token::Integer(number)
     }
 
     fn read_string(&mut self) -> Token {
@@ -189,6 +210,12 @@ mod test
                                               Token::Symbol("::"),
                                               Token::Word("Def".to_owned()),
                                               Token::EndOfLine]);
+    }
 
+    #[test]
+    fn can_read_positive_integer() {
+        assert_eq!(tokenize("123 45"), vec![Token::Integer(123),
+                                            Token::Integer(45),
+                                            Token::EndOfLine]);
     }
 }

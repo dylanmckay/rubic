@@ -7,6 +7,7 @@ pub enum Expr
     Assignment(AssignmentExpr),
     Call(CallExpr),
     StringLiteral(StringLiteral),
+    IntegerLiteral(IntegerLiteral),
 }
 
 /// A `a = b` expression.
@@ -32,6 +33,12 @@ pub struct StringLiteral
     pub value: String,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct IntegerLiteral
+{
+    pub value: i64,
+}
+
 macro_rules! expr_boilerplate {
     ($ty:ty => $shortname:ident) => {
         impl Into<Expr> for $ty {
@@ -45,3 +52,4 @@ macro_rules! expr_boilerplate {
 expr_boilerplate!(AssignmentExpr => Assignment);
 expr_boilerplate!(CallExpr => Call);
 expr_boilerplate!(StringLiteral => StringLiteral);
+expr_boilerplate!(IntegerLiteral => IntegerLiteral);

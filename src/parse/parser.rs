@@ -135,6 +135,7 @@ impl<I> Parser<I>
                 }.into())
             },
             Token::String(..) => self.parse_string_expression().map(Into::into),
+            Token::Integer(..) => self.parse_integer_expression().map(Into::into),
             token => panic!("don't know how to handle: {:?}", token),
         }
     }
@@ -177,7 +178,39 @@ impl<I> Parser<I>
         }
     }
 
+    fn parse_integer_expression(&mut self) -> Result<ast::IntegerLiteral, Error> {
+        let token = self.next().unwrap();
+
+        if let Token::Integer(i) = token {
+            Ok(ast::IntegerLiteral { value: i })
+        } else {
+            unreachable!();
+        }
+    }
+
     fn parse_arguments(&mut self) -> Result<Vec<ast::Argument>, Error> {
+        if self.peek().unwrap() == Token::left_paren() {
+            self.parse_arguments_with_parens()
+        } else {
+            self.parse_arguments_without_parens()
+        }
+    }
+
+    fn parse_arguments_with_parens(&mut self) -> Result<Vec<ast::Argument>, Error> {
+        self.eat_assert(&Token::left_paren());
+
+        let mut arguments = Vec::new();
+
+        self.until_token(Token::right_paren(), |parser| {
+            let argument = parser.parse_argument()?;
+            arguments.push(argument);
+            Ok(())
+        })?;
+
+        Ok(arguments)
+    }
+
+    fn parse_arguments_without_parens(&mut self) -> Result<Vec<ast::Argument>, Error> {
         let mut arguments = Vec::new();
 
         self.until_terminator(|parser| {
@@ -223,11 +256,16 @@ impl<I> Parser<I>
         }
     }
 
+    fn until_token<F>(&mut self, token: Token, f: F) -> Result<(), Error>
+        where F: FnMut(&mut Self) -> Result<(), Error> {
+        self.until(|next_tok| *next_tok == token , f, true)?;
+        self.eat(); // Eat terminator.
+        Ok(())
+    }
+
     fn until_end<F>(&mut self, f: F) -> Result<(), Error>
         where F: FnMut(&mut Self) -> Result<(), Error> {
-        self.until(|token| *token == Token::end(), f, true)?;
-        self.eat_assert(&Token::end());
-        Ok(())
+        self.until_token(Token::end(), f)
     }
 
     fn until_terminator<F>(&mut self, f: F) -> Result<(), Error>

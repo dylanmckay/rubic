@@ -9,6 +9,8 @@ pub enum Token
     Symbol(&'static str),
     /// A string in quotes.
     String(String),
+    /// An integer.
+    Integer(i64),
     EndOfLine,
     EndOfFile,
 }
@@ -40,6 +42,7 @@ impl fmt::Display for Token
             Token::Word(ref word) => word.fmt(fmt),
             Token::Symbol(sym) => sym.fmt(fmt),
             Token::String(ref s) => write!(fmt, "\"{}\"", s),
+            Token::Integer(i) => i.fmt(fmt),
             Token::EndOfLine => "end-of-line".fmt(fmt),
             Token::EndOfFile => "end-of-file".fmt(fmt),
         }
