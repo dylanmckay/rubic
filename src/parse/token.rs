@@ -31,6 +31,7 @@ impl Token
 
     pub fn colon() -> Token { Token::Symbol(":") }
     pub fn comma() -> Token { Token::Symbol(",") }
+    pub fn negate() -> Token { Token::Symbol("-") }
 
     pub fn rocket() -> Token { Token::Symbol("=>") }
     pub fn equals() -> Token { Token::Symbol("=") }

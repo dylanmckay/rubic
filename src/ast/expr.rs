@@ -11,6 +11,7 @@ pub enum Expr
     IntegerLiteral(IntegerLiteral),
     Symbol(SymbolExpr),
     KeyValue(KeyValueExpr),
+    Negate(NegateExpr),
 }
 
 /// A `a = b` expression.
@@ -64,6 +65,12 @@ pub struct SymbolExpr
     pub name: String,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NegateExpr
+{
+    pub inner: Box<Expr>,
+}
+
 macro_rules! expr_boilerplate {
     ($ty:ty => $shortname:ident) => {
         impl Into<Expr> for $ty {
@@ -81,3 +88,4 @@ expr_boilerplate!(StringLiteral => StringLiteral);
 expr_boilerplate!(IntegerLiteral => IntegerLiteral);
 expr_boilerplate!(SymbolExpr => Symbol);
 expr_boilerplate!(KeyValueExpr => KeyValue);
+expr_boilerplate!(NegateExpr => Negate);

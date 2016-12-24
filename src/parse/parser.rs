@@ -164,6 +164,7 @@ impl<I> Parser<I>
             Token::Integer(..) => self.parse_integer_expression().map(Into::into),
             Token::Symbol("(") => self.parse_paren_expression().map(Into::into),
             Token::Symbol(":") => self.parse_expr_starting_with_colon().map(Into::into),
+            Token::Symbol("-") => self.parse_negate_expr().map(Into::into),
             token => panic!("don't know how to handle: {:?}", token),
         }
     }
@@ -240,6 +241,13 @@ impl<I> Parser<I>
         } else {
             Ok(symbol.into())
         }
+    }
+
+    fn parse_negate_expr(&mut self) -> Result<ast::Expr, Error> {
+        self.eat_assert(&Token::negate());
+
+        let inner = self.parse_expression()?;
+        Ok(ast::Expr::Negate(ast::NegateExpr { inner: Box::new(inner) }))
     }
 
     fn parse_symbol(&mut self) -> Result<ast::SymbolExpr, Error> {
