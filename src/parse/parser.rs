@@ -1,4 +1,4 @@
-use parse::{Tokenizer, Token, Error, ErrorKind};
+use parse::{Tokenizer, Token, Error};
 use ast;
 
 use std::iter::Peekable;
@@ -59,7 +59,7 @@ impl<I> Parser<I>
         if self.peek().unwrap() == Token::less_than() {
             self.eat_assert(&Token::less_than());
 
-            superclass = Some(self.parse_constant()?);
+            superclass = Some(self.parse_path()?);
         }
 
         expect::terminator(self.next())?;
@@ -220,16 +220,6 @@ impl<I> Parser<I>
         expect::specific(self.next(), Token::right_paren())?;
 
         Ok(ast::ParenExpr { inner: Box::new(inner) })
-    }
-
-    fn parse_constant(&mut self) -> Result<ast::Constant, Error> {
-        let word = expect::word(self.next())?;
-
-        if word.chars().next().unwrap().is_uppercase() {
-            Ok(ast::Constant(word))
-        } else {
-            Err(ErrorKind::UnexpectedToken(Token::Word(word), vec![Token::Word("constant".to_owned())]).into())
-        }
     }
 
     fn parse_arguments(&mut self) -> Result<Vec<ast::Argument>, Error> {

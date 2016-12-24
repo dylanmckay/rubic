@@ -42,7 +42,7 @@ pub struct Class
     /// The items contained in the class.
     pub items: Vec<Item>,
     /// The parent class.
-    pub superclass: Option<Constant>,
+    pub superclass: Option<Path>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
