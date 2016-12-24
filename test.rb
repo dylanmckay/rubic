@@ -1,5 +1,5 @@
 class Kernel
   def foo
-    a = 1
+    foo(1, 2, 3)
   end
 end

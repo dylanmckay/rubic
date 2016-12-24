@@ -192,8 +192,8 @@ mod test
     }
 
     #[test]
-    fn considers_dashes_a_part_of_words() {
-        assert_eq!(tokenize("\tabcdef-hg"), vec![Token::Word("abcdef-hg".to_owned()), Token::EndOfLine]);
+    fn considers_underscores_a_part_of_words() {
+        assert_eq!(tokenize("\tabcdef_hg"), vec![Token::Word("abcdef_hg".to_owned()), Token::EndOfLine]);
     }
 
     #[test]

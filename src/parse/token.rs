@@ -29,6 +29,9 @@ impl Token
     pub fn less_than() -> Token { Token::Symbol("<") }
     pub fn greater_than() -> Token { Token::Symbol(">") }
 
+    pub fn colon() -> Token { Token::Symbol(":") }
+    pub fn comma() -> Token { Token::Symbol(",") }
+
     pub fn equals() -> Token { Token::Symbol("=") }
 
     pub fn is_terminator(&self) -> bool {

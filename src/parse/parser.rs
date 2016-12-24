@@ -161,6 +161,7 @@ impl<I> Parser<I>
             Token::String(..) => self.parse_string_expression().map(Into::into),
             Token::Integer(..) => self.parse_integer_expression().map(Into::into),
             Token::Symbol("(") => self.parse_paren_expression().map(Into::into),
+            Token::Symbol(":") => self.parse_symbol().map(Into::into),
             token => panic!("don't know how to handle: {:?}", token),
         }
     }
@@ -222,6 +223,12 @@ impl<I> Parser<I>
         Ok(ast::ParenExpr { inner: Box::new(inner) })
     }
 
+    fn parse_symbol(&mut self) -> Result<ast::SymbolExpr, Error> {
+        self.eat_assert(&Token::colon());
+        let name = expect::word(self.next())?;
+        Ok(ast::SymbolExpr { name: name })
+    }
+
     fn parse_arguments(&mut self) -> Result<Vec<ast::Argument>, Error> {
         if self.peek().unwrap() == Token::left_paren() {
             self.parse_arguments_with_parens()
@@ -238,6 +245,9 @@ impl<I> Parser<I>
         self.until_token(Token::right_paren(), |parser| {
             let argument = parser.parse_argument()?;
             arguments.push(argument);
+
+            expect::one_of(parser.peek(), &[Token::comma(), Token::right_paren()])?;
+            parser.eat_if(|token| *token == Token::comma())?;
             Ok(())
         })?;
 
@@ -327,6 +337,18 @@ impl<I> Parser<I>
 
         Ok(())
     }
+
+    fn eat_if<F>(&mut self,
+                 mut f: F) -> Result<(), Error>
+        where F: FnMut(&Token) -> bool {
+        if let Some(token) = self.peek() {
+            if f(&token) {
+                self.eat(); // Eat the token.
+            }
+        }
+
+        Ok(())
+    }
 }
 
 /// Utilities for reading tokens.
@@ -362,6 +384,15 @@ mod expect
         }
     }
 
+    pub fn one_of(token: Option<Token>, whitelist: &[Token]) -> Result<Token, Error> {
+        let token = self::something(token)?;
+
+        if whitelist.iter().any(|allowed_token| *allowed_token == token) {
+            Ok(token)
+        } else {
+            Err(ErrorKind::UnexpectedToken(token, whitelist.to_owned()).into())
+        }
+    }
 
     /// A terminating 'new line' or semicolon.
     pub fn terminator(token: Option<Token>) -> Result<(), Error> {
@@ -403,17 +434,6 @@ mod test
     fn can_parse_classes_with_semicolons() {
         assert_eq!(parse("class Abc;end"), ast::Program {
             items: vec![ast::Class::new("Abc").into()],
-        });
-    }
-
-    #[test]
-    fn can_parse_class_with_superclass() {
-        assert_eq!(parse("class Abc < Parent; end"), ast::Program {
-            items: vec![ast::Class {
-                name: "Abc".to_owned(),
-                items: Vec::new(),
-                superclass: Some(ast::Constant("Parent".to_owned())),
-            }.into()]
         });
     }
 
