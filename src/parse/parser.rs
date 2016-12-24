@@ -161,7 +161,7 @@ impl<I> Parser<I>
             Token::String(..) => self.parse_string_expression().map(Into::into),
             Token::Integer(..) => self.parse_integer_expression().map(Into::into),
             Token::Symbol("(") => self.parse_paren_expression().map(Into::into),
-            Token::Symbol(":") => self.parse_symbol().map(Into::into),
+            Token::Symbol(":") => self.parse_expr_starting_with_colon().map(Into::into),
             token => panic!("don't know how to handle: {:?}", token),
         }
     }
@@ -223,6 +223,23 @@ impl<I> Parser<I>
         Ok(ast::ParenExpr { inner: Box::new(inner) })
     }
 
+    fn parse_expr_starting_with_colon(&mut self) -> Result<ast::Expr, Error> {
+        let symbol = self.parse_symbol()?;
+
+        if self.peek().unwrap() == Token::rocket() {
+            self.eat_assert(&Token::rocket());
+
+            let value = self.parse_expression()?;
+
+            Ok(ast::KeyValueExpr {
+                key: symbol.name,
+                value: Box::new(value),
+            }.into())
+        } else {
+            Ok(symbol.into())
+        }
+    }
+
     fn parse_symbol(&mut self) -> Result<ast::SymbolExpr, Error> {
         self.eat_assert(&Token::colon());
         let name = expect::word(self.next())?;
@@ -260,6 +277,9 @@ impl<I> Parser<I>
         self.until_terminator(|parser| {
             let argument = parser.parse_argument()?;
             arguments.push(argument);
+
+            println!("PEEKED: {:?}", parser.peek());
+            parser.eat_if(|token| *token == Token::comma())?;
             Ok(())
         })?;
 
@@ -315,7 +335,6 @@ impl<I> Parser<I>
     fn until_terminator<F>(&mut self, f: F) -> Result<(), Error>
         where F: FnMut(&mut Self) -> Result<(), Error> {
         self.until(Token::is_terminator, f, false)?;
-        self.eat(); // Eat terminator.
         Ok(())
     }
 

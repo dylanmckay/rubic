@@ -32,6 +32,7 @@ impl Token
     pub fn colon() -> Token { Token::Symbol(":") }
     pub fn comma() -> Token { Token::Symbol(",") }
 
+    pub fn rocket() -> Token { Token::Symbol("=>") }
     pub fn equals() -> Token { Token::Symbol("=") }
 
     pub fn is_terminator(&self) -> bool {

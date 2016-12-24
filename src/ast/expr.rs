@@ -10,6 +10,7 @@ pub enum Expr
     StringLiteral(StringLiteral),
     IntegerLiteral(IntegerLiteral),
     Symbol(SymbolExpr),
+    KeyValue(KeyValueExpr),
 }
 
 /// A `a = b` expression.
@@ -19,6 +20,14 @@ pub struct AssignmentExpr
     /// The LHS
     pub assignee: ast::Path,
     /// The new value.
+    pub value: Box<Expr>,
+}
+
+/// A `:key => value` or `key: value` expression.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct KeyValueExpr
+{
+    pub key: String,
     pub value: Box<Expr>,
 }
 
@@ -71,3 +80,4 @@ expr_boilerplate!(CallExpr => Call);
 expr_boilerplate!(StringLiteral => StringLiteral);
 expr_boilerplate!(IntegerLiteral => IntegerLiteral);
 expr_boilerplate!(SymbolExpr => Symbol);
+expr_boilerplate!(KeyValueExpr => KeyValue);

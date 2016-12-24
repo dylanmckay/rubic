@@ -149,6 +149,7 @@ impl<I: Iterator<Item=char>> Iterator for Tokenizer<I>
 
     fn next(&mut self) -> Option<Token> {
         if let Some(token) = self.read_token() {
+            println!("token: {:?}", token);
             Some(token)
         } else {
             if self.sent_last_new_line {
