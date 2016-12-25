@@ -5,6 +5,7 @@ pub use self::stmt::*;
 pub mod id;
 pub mod expr;
 pub mod stmt;
+pub mod build;
 
 pub type ModuleId = Id<Module>;
 pub type ClassId = Id<Class>;
