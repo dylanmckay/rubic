@@ -103,6 +103,13 @@ pub enum Argument
     Positional(Expr),
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Parameter
+{
+    pub name: String,
+    pub default: Option<Box<Expr>>,
+}
+
 impl Program
 {
     pub fn new() -> Self {

@@ -1,5 +1,5 @@
 class Kernel
-  def foo
+  def foo(a, b)
     foo(1, 2, 3)
   end
 end

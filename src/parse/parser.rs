@@ -111,15 +111,44 @@ impl<I> Parser<I>
         Ok(ast::Function { name: name, statements: statements })
     }
 
-    fn parse_function_parameters(&mut self) -> Result<(), Error> {
+    fn parse_function_parameters(&mut self) -> Result<Vec<ast::Parameter>, Error> {
         let peeked_token = expect::something(self.peek())?;
 
         // Check if there is a parameter list.
         if peeked_token == Token::left_paren() {
+            self.parse_parameter_list()
+        } else {
+            // No parameters
+            Ok(Vec::new())
+        }
+    }
+
+    fn parse_parameter_list(&mut self) -> Result<Vec<ast::Parameter>, Error> {
+        self.eat_assert(&Token::left_paren());
+
+        let mut parameters = Vec::new();
+
+        self.until_token(Token::right_paren(), |parser| {
+            let parameter = parser.parse_parameter()?;
+            parameters.push(parameter);
+
+            expect::one_of(parser.peek(), &[Token::comma(), Token::right_paren()])?;
+            parser.eat_if(|token| *token == Token::comma())?;
+            Ok(())
+        })?;
+
+        Ok(parameters)
+    }
+
+    fn parse_parameter(&mut self) -> Result<ast::Parameter, Error> {
+        let name = expect::word(self.next())?;
+
+        // Check if there is a default value.
+        if Token::equals() == self.peek().unwrap() {
+            self.eat_assert(&Token::equals());
             unimplemented!();
         } else {
-            // No arguments
-            Ok(())
+            Ok(ast::Parameter { name: name, default: None })
         }
     }
 
