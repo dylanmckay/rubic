@@ -6,6 +6,7 @@ use std::collections::{VecDeque, HashMap};
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Scope
 {
+    pub id: ir::ItemId,
     /// The name of the scope.
     /// Empth string means global namespace.
     pub name: String,
@@ -22,16 +23,22 @@ pub struct ScopeContext
 impl Scope
 {
     /// Creates a new named scope.
-    pub fn new(name: String) -> Self {
+    pub fn new(name: String, id: ir::ItemId) -> Self {
         Scope {
+            id: id,
             name: name,
             classes: HashMap::new(),
         }
     }
 
+    pub fn insert_class(&mut self, class: &ir::Class) {
+        self.classes.insert(class.name.clone(), class.id.clone());
+    }
+
     /// Creates the global scope.
     pub fn global() -> Self {
-        Scope::new("".to_owned())
+        let id = ir::ItemId::Module(ir::Id::new());
+        Scope::new("".to_owned(), id)
     }
 
     pub fn is_global(&self) -> bool { self.name.is_empty() }
@@ -49,8 +56,8 @@ impl ScopeContext
     }
 
     /// Creates a new nested scope.
-    pub fn begin(&mut self, name: String) {
-        self.stack.push_front(Scope::new(name));
+    pub fn begin(&mut self, name: String, id: ir::ItemId) {
+        self.stack.push_front(Scope::new(name, id));
     }
 
     /// Ends a scope.
@@ -58,6 +65,13 @@ impl ScopeContext
         assert!(self.stack.front().is_some(), "no scope to end");
         assert!(!self.stack.front().unwrap().is_global(), "cannot end the global scope");
         self.stack.pop_front();
+    }
+
+    pub fn current(&self) -> &Scope { self.stack.front().unwrap() }
+    pub fn current_mut(&mut self) -> &mut Scope { self.stack.front_mut().unwrap() }
+
+    pub fn resolve(&self, path: &ast::Path) -> Option<ir::ItemId> {
+        self.resolve_scope(path).map(|s| s.id.clone())
     }
 
     /// Resolves a scope by name.

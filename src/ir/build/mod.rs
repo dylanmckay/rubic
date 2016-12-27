@@ -41,15 +41,23 @@ impl Context
     }
 
     fn class(&mut self, class: ast::Class) -> Result<(), Error> {
-        self.scopes.begin(class.name.clone());
+        let superclass = class.superclass.map(|class_path| {
+            self.scopes.resolve(&class_path).unwrap().expect_class()
+        });
 
         let ir = ir::Class {
             id: ir::Id::new(),
-            name: class.name,
-            items: unimplemented!(),
-            superclass: unimplemented!(),
+            name: class.name.clone(),
+            superclass: superclass,
         };
 
+        self.scopes.current_mut().insert_class(&ir);
+
+        self.scopes.begin(class.name.clone(), ir::ItemId::Class(ir.id.clone()));
+        for item in class.items { self.item(item)?; }
+        self.classes.push(ir);
+
         self.scopes.end();
+        Ok(())
     }
 }

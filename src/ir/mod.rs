@@ -15,17 +15,14 @@ pub type FunctionId = Id<Function>;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Program
 {
-    pub items: Vec<Item>,
 }
 
-/// An item.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Item
+pub enum ItemId
 {
-    Module(Module),
-    Class(Class),
-    Function(Function),
-    Stmt(Stmt),
+    Module(ModuleId),
+    Class(ClassId),
+    Function(FunctionId),
 }
 
 /// A module.
@@ -35,8 +32,6 @@ pub struct Module
     pub id: ModuleId,
     /// The name of the module.
     pub name: String,
-    /// The items contained in the module.
-    pub items: Vec<Item>,
 }
 
 /// A class.
@@ -46,8 +41,6 @@ pub struct Class
     pub id: ClassId,
     /// The name of the class.
     pub name: String,
-    /// The items contained in the class.
-    pub items: Vec<Item>,
     /// The parent class.
     pub superclass: Option<ClassId>,
 }
@@ -94,25 +87,31 @@ pub enum Lvalue
 impl Program
 {
     pub fn new() -> Self {
-        Program { items: Vec::new() }
+        Program { }
     }
 }
 
 impl Module
 {
     pub fn new<S>(name: S) -> Self where S: Into<String> {
-        Module { id: Id::new(), name: name.into(), items: Vec::new() }
+        Module { id: Id::new(), name: name.into() }
     }
 }
 
 impl Class
 {
     pub fn new<S>(name: S) -> Self where S: Into<String> {
-        Class { id: Id::new(), name: name.into(), items: Vec::new(), superclass: None }
+        Class { id: Id::new(), name: name.into(), superclass: None }
     }
 }
 
-impl Into<Item> for Class { fn into(self) -> Item { Item::Class(self) } }
-impl Into<Item> for Module { fn into(self) -> Item { Item::Module(self) } }
-impl Into<Item> for Function { fn into(self) -> Item { Item::Function(self) } }
-impl Into<Item> for Stmt { fn into(self) -> Item { Item::Stmt(self) } }
+impl ItemId
+{
+    pub fn expect_class(&self) -> ClassId {
+        if let ItemId::Class(ref id) = *self {
+            id.clone()
+        } else {
+            panic!("not a class");
+        }
+    }
+}
