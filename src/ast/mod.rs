@@ -131,6 +131,22 @@ impl Class
     }
 }
 
+impl Path
+{
+    pub fn is_constant(&self) -> bool {
+        self.parts.iter().all(|part| if let PathSegmentKind::Constant(..) = part.kind { true } else { false })
+    }
+
+    pub fn textual_parts(&self) -> Vec<&str> {
+        self.parts.iter().map(|part| {
+            match part.kind {
+                PathSegmentKind::Constant(ref c) => &c.0[..],
+                PathSegmentKind::Identifier(ref i) => &i.0[..],
+            }
+        }).collect()
+    }
+}
+
 impl PathSegmentKind
 {
     pub fn new(text: String) -> Self {
