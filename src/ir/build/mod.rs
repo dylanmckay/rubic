@@ -94,15 +94,38 @@ impl Context
     }
 
     fn function(&mut self, function: ast::Function) -> Result<(), Error> {
-        let ir = ir::Function {
+        let mut ir = ir::Function {
             id: ir::FunctionId::new(),
             name: function.name.clone(),
             statements: Vec::new(),
         };
 
         self.scopes.current_mut().insert_function(&ir);
+
+        for stmt in function.statements {
+            ir.statements.push(self.stmt(stmt)?);
+        }
+
         self.functions.push(ir);
 
         Ok(())
+    }
+
+    fn stmt(&mut self, stmt: ast::Stmt) -> Result<ir::Stmt, Error> {
+        match stmt {
+            ast::Stmt::Expr(e) => self.expr(e).map(ir::Stmt::Expr),
+        }
+    }
+
+    fn expr(&mut self, expr: ast::Expr) -> Result<ir::Expr, Error> {
+        match expr {
+            ast::Expr::Call(e) => self.expr_call(e).map(ir::Expr::Call),
+            _ => unimplemented!(),
+        }
+    }
+
+    fn expr_call(&mut self, call: ast::CallExpr) -> Result<ir::CallExpr, Error> {
+        let callee = self.scopes.resolve(&call.callee);
+        unimplemented!();
     }
 }
