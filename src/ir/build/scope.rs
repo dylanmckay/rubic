@@ -10,7 +10,9 @@ pub struct Scope
     /// The name of the scope.
     /// Empth string means global namespace.
     pub name: String,
+    pub modules: HashMap<String, ir::ModuleId>,
     pub classes: HashMap<String, ir::ClassId>,
+    pub functions: HashMap<String, ir::FunctionId>,
 }
 
 /// A tree of scope.
@@ -27,17 +29,27 @@ impl Scope
         Scope {
             id: id,
             name: name,
+            modules: HashMap::new(),
             classes: HashMap::new(),
+            functions: HashMap::new(),
         }
+    }
+
+    pub fn insert_module(&mut self, module: &ir::Module) {
+        self.modules.insert(module.name.clone(), module.id.clone());
     }
 
     pub fn insert_class(&mut self, class: &ir::Class) {
         self.classes.insert(class.name.clone(), class.id.clone());
     }
 
+    pub fn insert_function(&mut self, func: &ir::Function) {
+        self.functions.insert(func.name.clone(), func.id.clone());
+    }
+
     /// Creates the global scope.
     pub fn global() -> Self {
-        let id = ir::ItemId::Module(ir::Id::new());
+        let id = ir::ItemId::Module(ir::ModuleId::new());
         Scope::new("".to_owned(), id)
     }
 
@@ -102,8 +114,8 @@ mod test
     #[test]
     fn can_resolve_basic_scopes() {
         let mut context = ScopeContext::new();
-        context.stack.push_front(Scope::new("Foo".to_owned()));
-        context.stack.push_front(Scope::new("Bar".to_owned()));
+        context.begin("Foo".to_owned(), ir::ItemId::Class(ir::ClassId::new()));
+        context.begin("Bar".to_owned(), ir::ItemId::Class(ir::ClassId::new()));
 
         let path = ast::Path {
             parts: vec![ast::PathSegment {
@@ -114,15 +126,15 @@ mod test
                 separator: ast::PathSeparator::DoubleColon,
             }],
         };
-        assert_eq!(context.resolve_scope(&path), Some(&Scope::new("Bar".to_owned())));
+        assert_eq!(context.resolve_scope(&path).unwrap().name, "Bar");
     }
 
     #[test]
     fn can_resolve_multiple_nested_scopes() {
         let mut context = ScopeContext::new();
-        context.stack.push_front(Scope::new("Foo".to_owned()));
-        context.stack.push_front(Scope::new("Bar".to_owned()));
-        context.stack.push_front(Scope::new("Baz".to_owned()));
+        context.begin("Foo".to_owned(), ir::ItemId::Class(ir::ClassId::new()));
+        context.begin("Bar".to_owned(), ir::ItemId::Class(ir::ClassId::new()));
+        context.begin("Baz".to_owned(), ir::ItemId::Class(ir::ClassId::new()));
 
         let path = ast::Path {
             parts: vec![ast::PathSegment {
@@ -137,6 +149,6 @@ mod test
                 separator: ast::PathSeparator::DoubleColon,
             }],
         };
-        assert_eq!(context.resolve_scope(&path), Some(&Scope::new("Baz".to_owned())));
+        assert_eq!(context.resolve_scope(&path).unwrap().name, "Baz");
     }
 }

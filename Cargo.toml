@@ -23,5 +23,9 @@ path = "tools/tokenize.rs"
 name = "parse"
 path = "tools/parse.rs"
 
+[[bin]]
+name = "ir"
+path = "tools/ir.rs"
+
 [dependencies]
 error-chain = "0.7"

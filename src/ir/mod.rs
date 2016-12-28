@@ -7,14 +7,34 @@ pub mod expr;
 pub mod stmt;
 pub mod build;
 
-pub type ModuleId = Id<Module>;
-pub type ClassId = Id<Class>;
-pub type FunctionId = Id<Function>;
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct ModuleId(pub Id);
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct ClassId(pub Id);
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct FunctionId(pub Id);
+
+impl ModuleId {
+    pub fn new() -> Self { ModuleId(Id::new()) }
+}
+
+impl ClassId {
+    pub fn new() -> Self { ClassId(Id::new()) }
+}
+
+impl FunctionId {
+    pub fn new() -> Self { FunctionId(Id::new()) }
+}
+
+use std::collections::HashMap;
 
 /// A Ruby program.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Program
 {
+    pub modules: HashMap<ModuleId, Module>,
+    pub classes: HashMap<ClassId, Class>,
+    pub functions: HashMap<FunctionId, Function>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -87,21 +107,25 @@ pub enum Lvalue
 impl Program
 {
     pub fn new() -> Self {
-        Program { }
+        Program {
+            modules: HashMap::new(),
+            classes: HashMap::new(),
+            functions: HashMap::new(),
+        }
     }
 }
 
 impl Module
 {
     pub fn new<S>(name: S) -> Self where S: Into<String> {
-        Module { id: Id::new(), name: name.into() }
+        Module { id: ModuleId::new(), name: name.into() }
     }
 }
 
 impl Class
 {
     pub fn new<S>(name: S) -> Self where S: Into<String> {
-        Class { id: Id::new(), name: name.into(), superclass: None }
+        Class { id: ClassId::new(), name: name.into(), superclass: None }
     }
 }
 
